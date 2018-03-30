@@ -1,4 +1,4 @@
-(load "simpleParser.scm")
+ (load "simpleParser.scm")
 
 ; An interpreter for the simple language using tail recursion for the M_state functions and does not handle side effects.
 
@@ -12,6 +12,18 @@
      (interpret-statement-list (parser file) (newenvironment) (lambda (v) v)
                                (lambda (env) (myerror "Break used outside of loop")) (lambda (env) (myerror "Continue used outside of loop"))
                                (lambda (v env) (myerror "Uncaught exception thrown")) (lambda (env) env)))))
+
+; outer layer of interpreter
+; reads global variables/functions
+; looks up and executes main
+; returns the value
+(define outer-layer
+  (lambda (statement-list environment)
+    (cond
+      ((null? statement-list) environment)
+      ((eq? 'var (statement-type (car statement))) (outer-layer (cdr statement-list) (interpret-declare (car statement-list) envionrment next)))
+      ((eq? 'function (statement-type (car statment))) (outer-layer (cdr statement-list) (interpret-function (car statement-list) environment)))
+      (else (myerror "Only functions or variables allowed at global level")))))
 
 ; interprets a list of statements.  The state/environment from each statement is used for the next ones.
 (define interpret-statement-list
@@ -35,7 +47,7 @@
       ((eq? 'throw (statement-type statement)) (interpret-throw statement environment throw))
       ((eq? 'try (statement-type statement)) (interpret-try statement environment return break continue throw next))
       ((eq? 'function (statement-type statement)) (interpret-function statement environment return break continue throw next)) ; what does interpret function need to take?
-      (else (myerror "Unknown statement:" (statement-type statement))))))
+      (else (myerror "Unknown statement:" (statement-type statement))))))                                                      ; this (above) handles nested funcitons
 
 ; Calls the return continuation with the given expression value
 (define interpret-return
