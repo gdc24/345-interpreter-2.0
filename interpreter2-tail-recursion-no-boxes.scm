@@ -34,6 +34,7 @@
       ((eq? 'begin (statement-type statement)) (interpret-block statement environment return break continue throw next))
       ((eq? 'throw (statement-type statement)) (interpret-throw statement environment throw))
       ((eq? 'try (statement-type statement)) (interpret-try statement environment return break continue throw next))
+      ((eq? 'function (statement-type statement)) (interpret-function statement enviornment return break continue throw next)) ; what does interpret function need to take?
       (else (myerror "Unknown statement:" (statement-type statement))))))
 
 ; Calls the return continuation with the given expression value
@@ -129,6 +130,23 @@
       ((not (eq? (statement-type finally-statement) 'finally)) (myerror "Incorrectly formatted finally block"))
       (else (cons 'begin (cadr finally-statement))))))
 
+; Interprets a function
+; returns final state including input function
+(define interpret-function
+  (lambda (statement environment)
+    (insert (get-func-name statement) (create-func-closure statement environment) environment)))
+
+; creates a closure for the function, containing the following:
+; 1. function parameters
+; 2. function body
+; 3. scope for the function (the state the function is executed in)
+(define create-func-closure
+  (lambda (statement current-environment)
+    (list (get-func-params statement)
+          (get=func-body statement)
+          current-environment)))
+
+
 ; Evaluates all possible boolean and arithmetic expressions, including constants and variables.
 (define eval-expression
   (lambda (expr environment)
@@ -210,6 +228,9 @@
 (define get-try operand1)
 (define get-catch operand2)
 (define get-finally operand3)
+(define get-func-name operand1)
+(define get-func-params operand2)
+(define get-func-body operand3)
 
 (define catch-var
   (lambda (catch-statement)
