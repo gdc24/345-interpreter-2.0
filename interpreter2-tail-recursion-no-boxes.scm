@@ -34,7 +34,7 @@
       ((eq? 'begin (statement-type statement)) (interpret-block statement environment return break continue throw next))
       ((eq? 'throw (statement-type statement)) (interpret-throw statement environment throw))
       ((eq? 'try (statement-type statement)) (interpret-try statement environment return break continue throw next))
-      ((eq? 'function (statement-type statement)) (interpret-function statement enviornment return break continue throw next)) ; what does interpret function need to take?
+      ((eq? 'function (statement-type statement)) (interpret-function statement environment return break continue throw next)) ; what does interpret function need to take?
       (else (myerror "Unknown statement:" (statement-type statement))))))
 
 ; Calls the return continuation with the given expression value
@@ -132,6 +132,7 @@
 
 ; Interprets a function
 ; returns final state including input function
+; I think this is wrong
 (define interpret-function
   (lambda (statement environment)
     (insert (get-func-name statement) (create-func-closure statement environment) environment)))
@@ -156,6 +157,15 @@
       ((eq? expr 'false) #f)
       ((not (list? expr)) (lookup expr environment))
       (else (eval-operator expr environment)))))
+
+
+; Evaluates a function
+; 1) creates a function environment using the closure function on the current environment
+; 2) evaluates each actual param in the current environment and binds it to the formal param in the function environment
+; 3) interprets the body of the function with the function environment
+(define eval-function
+  (lambda (func-name environment)
+    (lookup (func-name environment)))) ; the function closure
 
 ; Evaluate a binary (or unary) operator.  Although this is not dealing with side effects, I have the routine evaluate the left operand first and then
 ; pass the result to eval-binary-op2 to evaluate the right operand.  This forces the operands to be evaluated in the proper order in case you choose
