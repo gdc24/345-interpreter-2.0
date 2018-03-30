@@ -25,6 +25,10 @@
       ((eq? 'function (statement-type (car statment))) (outer-layer (cdr statement-list) (interpret-function (car statement-list) environment)))
       (else (myerror "Only functions or variables allowed at global level")))))
 
+(define execute-main
+  (lambda (environment return break continue throw next)
+    (interpret-statement-list )))
+
 ; interprets a list of statements.  The state/environment from each statement is used for the next ones.
 (define interpret-statement-list
   (lambda (statement-list environment return break continue throw next)
@@ -156,8 +160,18 @@
 (define create-func-closure
   (lambda (statement current-environment)
     (list (get-func-params statement)
-          (get=func-body statement)
+          (get-func-body statement)
           current-environment)))
+
+; given function name, return function closure
+(define func-closure
+  (lambda (func-name environment)
+    (lookup func-name environment)))
+
+; given function name, return function body
+(define func-body
+  (lambda (func-name environment)
+    (cadr (func-closure func-name environment))))
 
 
 ; Evaluates all possible boolean and arithmetic expressions, including constants and variables.
