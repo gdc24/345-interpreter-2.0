@@ -200,9 +200,23 @@
 ; 2) evaluates each actual param in the current environment and binds it to the formal param in the function environment
 ; 3) interprets the body of the function with the function environment
 (define eval-function
-  (lambda (func-name environment return break continue throw next)
-    (interpret-statement-list (func-body func-name environment) return break continue throw next)))
-;    (lookup (func-name environment)))) ; the function closure
+  (lambda (expr environment return break continue throw next)
+    (interpret-statement-list (func-body (get-func-name expr) environment)
+                              (cons (list (get-param (get-func-name expr) environment) (cddr expr)) environment) ;(get-environment (get-func-name expr) environment))
+                              return break continue throw next)))
+
+; get function's environment from closure
+(define get-environment
+  (lambda (func-name environment)
+    (caddr (func-closure func-name environment))))
+
+(define get-param
+  (lambda (func-name environment)
+    (car (func-closure func-name environment))))
+  
+
+;(define bind-param
+;  (lambda (
 
 ; Evaluate a binary (or unary) operator.  Although this is not dealing with side effects, I have the routine evaluate the left operand first and then
 ; pass the result to eval-binary-op2 to evaluate the right operand.  This forces the operands to be evaluated in the proper order in case you choose
