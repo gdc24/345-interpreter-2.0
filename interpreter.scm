@@ -9,7 +9,7 @@
 (define interpret
   (lambda (file)
     (scheme->language
-     (execute-main (outer-layer (parser file) (newenvironment))
+     (execute-main (outer-layer (parser file) (newenvironment) (lambda (env) env))
                    (lambda (v) v)
                    (lambda (env) (myerror "Break used outside of loop"))
                    (lambda (env) (myerror "Continue used outside of loop"))
@@ -19,11 +19,11 @@
 ; outer layer of interpreter
 ; reads global variables/functions
 (define outer-layer
-  (lambda (statement-list environment)
+  (lambda (statement-list environment next)
     (cond
       ((null? statement-list) environment)
-      ((eq? 'var (statement-type (car statement-list))) (outer-layer (cdr statement-list) (interpret-declare (car statement-list) environment next)))
-      ((eq? 'function (statement-type (car statement-list))) (outer-layer (cdr statement-list) (interpret-function (car statement-list) environment)))
+      ((eq? 'var (statement-type (car statement-list))) (outer-layer (cdr statement-list) (interpret-declare (car statement-list) environment next) next))
+      ((eq? 'function (statement-type (car statement-list))) (outer-layer (cdr statement-list) (interpret-function (car statement-list) environment) next))
       (else (myerror "Only functions or variables allowed at global level")))))
   
 ; looks up and executes main
