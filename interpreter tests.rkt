@@ -1,15 +1,39 @@
-; We want to test this code with SchemeUnit. We start by creating a file called file-test.scm to contain our tests.
-; At the top of file-test.scm we import SchemeUnit and file.scm:
+(load "interpreter.scm")
 
-;  #lang scheme/base
-
-(load schemeunit
-         "interpreter2-tail-recursion-no-boxes.scm")
-
-; Now we add some tests to check our library:
-
-(check-equal? (interpret "tests1/test01.txt") 150 "description")
-(check-equal? (interpret "tests1/test02.txt") -4 "description")
-(check-equal? (interpret "tests1/test03.txt") 10 "")
-(check-equal? (interpret "tests1/test04.txt") 16 "")
-
+(define tests
+  (lambda ()
+    (if (and
+         ; part 1 tests
+         (eq? (interpret "tests1/test01.txt") 150)
+         (eq? (interpret "tests1/test02.txt") -4)
+         (eq? (interpret "tests1/test03.txt") 10)
+         (eq? (interpret "tests1/test04.txt") 16)
+         (eq? (interpret "tests1/test05.txt") 220)
+         (eq? (interpret "tests1/test06.txt") 5)
+         (eq? (interpret "tests1/test07.txt") 6)
+         (eq? (interpret "tests1/test08.txt") 10)
+         (eq? (interpret "tests1/test09.txt") 5)
+         (eq? (interpret "tests1/test10.txt") -39)
+         (eq? (interpret "tests1/test15.txt") 'true)
+         (eq? (interpret "tests1/test16.txt") '100)
+         (eq? (interpret "tests1/test17.txt") 'false)
+         (eq? (interpret "tests1/test18.txt") 'true)
+         ;(eq? (interpret "tests1/test19.txt") 128)
+         ; part 2 tests
+         (eq? (interpret "tests2/test01.txt") 20)
+;         (eq? (interpret "tests2/test02.txt") 164)
+;         (eq? (interpret "tests2/test03.txt") 32)
+         (eq? (interpret "tests2/test04.txt") 2)
+         (eq? (interpret "tests2/test06.txt") 25)
+;         (eq? (interpret "tests2/test07.txt") 21)
+;         (eq? (interpret "tests2/test08.txt") 6)
+;         (eq? (interpret "tests2/test09.txt") -1)
+;         (eq? (interpret "tests2/test10.txt") 789)
+;         (eq? (interpret "tests2/test14.txt") 12)
+         (eq? (interpret "tests2/test15.txt") 125)
+;         (eq? (interpret "tests2/test16.txt") 110)
+;         (eq? (interpret "tests2/test17.txt") 2000400)
+;         (eq? (interpret "tests2/test18.txt") 101))
+         )
+         #t
+         #f)))

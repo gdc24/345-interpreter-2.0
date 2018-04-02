@@ -1,4 +1,4 @@
- (load "simpleParser.scm")
+(load "functionParser.scm")
 
 ; An interpreter for the simple language using tail recursion for the M_state functions and does not handle side effects.
 
@@ -9,25 +9,27 @@
 (define interpret
   (lambda (file)
     (scheme->language
-     (interpret-statement-list (parser file) (newenvironment) (lambda (v) v)
-                               (lambda (env) (myerror "Break used outside of loop")) (lambda (env) (myerror "Continue used outside of loop"))
-                               (lambda (v env) (myerror "Uncaught exception thrown")) (lambda (env) env)))))
+     (execute-main (outer-layer (parser file) (newenvironment))
+                   (lambda (v) v)
+                   (lambda (env) (myerror "Break used outside of loop"))
+                   (lambda (env) (myerror "Continue used outside of loop"))
+                   (lambda (v env) (myerror "Uncaught exception thrown"))
+                   (lambda (env) env)))))
 
 ; outer layer of interpreter
 ; reads global variables/functions
-; looks up and executes main
-; returns the value
 (define outer-layer
   (lambda (statement-list environment)
     (cond
       ((null? statement-list) environment)
-      ((eq? 'var (statement-type (car statement))) (outer-layer (cdr statement-list) (interpret-declare (car statement-list) envionrment next)))
-      ((eq? 'function (statement-type (car statment))) (outer-layer (cdr statement-list) (interpret-function (car statement-list) environment)))
+      ((eq? 'var (statement-type (car statement-list))) (outer-layer (cdr statement-list) (interpret-declare (car statement-list) environment next)))
+      ((eq? 'function (statement-type (car statement-list))) (outer-layer (cdr statement-list) (interpret-function (car statement-list) environment)))
       (else (myerror "Only functions or variables allowed at global level")))))
-
+  
+; looks up and executes main
 (define execute-main
   (lambda (environment return break continue throw next)
-    (interpret-statement-list )))
+    (interpret-statement-list (func-body 'main environment) (push-frame environment) return break continue throw next)))
 
 ; interprets a list of statements.  The state/environment from each statement is used for the next ones.
 (define interpret-statement-list
@@ -264,9 +266,11 @@
 (define get-try operand1)
 (define get-catch operand2)
 (define get-finally operand3)
+
 (define get-func-name operand1)
 (define get-func-params operand2)
 (define get-func-body operand3)
+(define get-first-statement car)
 
 (define catch-var
   (lambda (catch-statement)
