@@ -52,6 +52,7 @@
       ((eq? 'begin (statement-type statement)) (interpret-block statement environment return break continue throw next))
       ((eq? 'throw (statement-type statement)) (interpret-throw statement environment throw))
       ((eq? 'try (statement-type statement)) (interpret-try statement environment return break continue throw next))
+      ((eq? 'funcall (statement-type statement)) (interpret-function statement environment return break continue throw next))
       ((eq? 'function (statement-type statement)) (interpret-function statement environment return break continue throw next)) ; what does interpret function need to take?
       (else (myerror "Unknown statement:" (statement-type statement))))))                                                      ; this (above) handles nested funcitons
 
@@ -201,6 +202,7 @@
 (define eval-operator
   (lambda (expr environment)
     (cond
+      ((eq? 'funcall (operator expr)) (eval-function expr environment))
       ((eq? '! (operator expr)) (not (eval-expression (operand1 expr) environment)))
       ((and (eq? '- (operator expr)) (= 2 (length expr))) (- (eval-expression (operand1 expr) environment)))
       (else (eval-binary-op2 expr (eval-expression (operand1 expr) environment) environment)))))
