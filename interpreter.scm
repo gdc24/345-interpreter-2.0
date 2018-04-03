@@ -1,4 +1,9 @@
+; Taylor Smith tps45
+; Giuliana Conte gdc24
+; Interpreter Project Part 3
+
 (load "functionParser.scm")
+
 
 ; An interpreter for the simple language using tail recursion for the M_state functions and does not handle side effects.
 
@@ -59,8 +64,8 @@
       ((eq? 'begin (statement-type statement)) (interpret-block statement environment return break continue throw next))
       ((eq? 'throw (statement-type statement)) (interpret-throw statement environment throw))
       ((eq? 'try (statement-type statement)) (interpret-try statement environment return break continue throw next))
-      ((eq? 'funcall (statement-type statement)) (interpret-function statement environment return break continue throw next))
-      ((eq? 'function (statement-type statement)) (interpret-function statement environment return break continue throw next)) ; what does interpret function need to take?
+      ((eq? 'funcall (statement-type statement)) (interpret-function statement environment))
+      ((eq? 'function (statement-type statement)) (interpret-function statement environment )) ; what does interpret function need to take?
       (else (myerror "Unknown statement:" (statement-type statement))))))                                                      ; this (above) handles nested funcitons
 
 ; Calls the return continuation with the given expression value
