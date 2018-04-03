@@ -194,16 +194,25 @@
       ((not (list? expr)) (lookup expr environment))
       (else (eval-operator expr environment return break continue throw next)))))
 
+(define eval-function
+  (lambda (expr environment return break continue throw next)
+    (interpret-statement-list (func-body (get-func-name expr) environment)
+                              (get-scope (get-func-name expr) (func-closure (get-func-name expr) environment))
+                              return break continue throw next)))
+
+(define get-scope
+  (lambda (func-name environment)
+    (get-environment func-name environment)))
 
 ; Evaluates a function
 ; 1) creates a function environment using the closure function on the current environment
 ; 2) evaluates each actual param in the current environment and binds it to the formal param in the function environment
 ; 3) interprets the body of the function with the function environment
-(define eval-function
-  (lambda (expr environment return break continue throw next)
-    (interpret-statement-list (func-body (get-func-name expr) environment)
-                              (cons (list (get-param (get-func-name expr) environment) (cddr expr)) environment) ;(get-environment (get-func-name expr) environment))
-                              return break continue throw next)))
+;(define eval-function
+;  (lambda (expr environment return break continue throw next)
+;    (interpret-statement-list (func-body (get-func-name expr) environment)
+;                              (cons (list (get-param (get-func-name expr) environment) (cddr expr)) environment) ;(get-environment (get-func-name expr) environment))
+;                              return break continue throw next)))
 
 ; get function's environment from closure
 (define get-environment
@@ -225,7 +234,7 @@
   (lambda (expr environment return break continue throw next)
     (cond
       ((eq? 'funcall (operator expr)) (eval-function expr environment return break continue throw next))
-      ((eq? '! (operator expr)) (not (eval-expression (operand1 expr) environment)))
+      ((eq? '! (operator expr)) (not (eval-expression (operand1 expr) environment return break continue throw next)))
       ((and (eq? '- (operator expr)) (= 2 (length expr))) (- (eval-expression (operand1 expr) environment)))
       (else (eval-binary-op2 expr (eval-expression (operand1 expr) environment return break continue throw next) environment return break continue throw next)))))
 
@@ -291,7 +300,7 @@
 (define get-catch operand2)
 (define get-finally operand3)
 
-(define get-func-name operand1)
+(define get-func-name cadr)
 (define get-func-params operand2)
 (define get-func-body operand3)
 (define get-first-statement car)
