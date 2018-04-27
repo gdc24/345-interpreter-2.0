@@ -1,8 +1,8 @@
 ; Taylor Smith tps45
 ; Giuliana Conte gdc24
-; Interpreter Project Part 3
+; Interpreter Project Part 4
 
-(load "functionParser.scm")
+(load "classParser.scm")
 
 
 ; An interpreter for the simple language using tail recursion for the M_state functions and does not handle side effects.
@@ -10,7 +10,8 @@
 ; The functions that start interpret-...  all return the current environment.  These are the M_state functions.
 ; The functions that start eval-...  all return a value.  These are the M_value and M_boolean functions.
 
-; The main function.  Calls parser to get the parse tree and interprets it with a new environment.  Sets default continuations for return, break, continue, throw, and "next statement"
+; The main function.  Calls parser to get the parse tree and interprets it with a new environment.
+; Sets default continuations for return, break, continue, throw, and "next statement"
 (define interpret
   (lambda (file)
     (scheme->language
