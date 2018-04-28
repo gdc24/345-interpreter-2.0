@@ -127,15 +127,6 @@
          (loop (get-condition statement) (get-body statement) environment))))))
 
 ; Interprets a block.  The break, continue, and throw continuations must be adjusted to pop the environment
-;(define interpret-block
-;  (lambda (statement environment return break continue throw)
-;    (pop-frame (interpret-statement-list (cdr statement)
-;                                         (push-frame environment)
-;                                         return
-;                                         (lambda (env) (break (pop-frame env)))
-;                                         (lambda (env) (continue (pop-frame env)))
-;                                         (lambda (v env) (throw v (pop-frame env)))))))
-
 (define interpret-block
   (lambda (statement environment return break continue throw)
     (interpret-statement-list (cdr statement)
@@ -143,7 +134,7 @@
                               return
                               (lambda (env) (break (pop-frame env)))
                               (lambda (env) (continue (pop-frame env)))
-                              (lambda (v env) (throw v env)))))
+                              (lambda (v env) (throw v (pop-frame env))))))
 
 ; We use a continuation to throw the proper value. Because we are not using boxes, the environment/state must be thrown as well so any environment changes will be kept
 (define interpret-throw
