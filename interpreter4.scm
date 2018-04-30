@@ -97,7 +97,7 @@
   (lambda (classname vars vals)
     (cond
       ((null? vars) (myerror "Class does not exist: " classname))
-      ((eq? classname (car vars)) (car vals)) ;; wrong;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ((eq? (string->symbol classname) (car vars)) (car vals)) ;; wrong;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       (else (lookup-class-closure classname (cdr vars) (cdr vals))))))
 
 
