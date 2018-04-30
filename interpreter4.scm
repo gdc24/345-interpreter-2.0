@@ -13,33 +13,98 @@
 
 ; The main function.  Calls parser to get the parse tree and interprets it with a new environment.  The returned value is in the environment.
 (define interpret
-  (lambda (file)
+  (lambda (file classname)
     (scheme->language
      (call/cc
       (lambda (return)
-        (execute-main (outer-layer (parser file)
-                                   (newenvironment)
-                                   (lambda (v env) (myerror "Uncaught exception thrown")))
-                      return
-                      (lambda (env) (myerror "Break used outside of loop"))
-                      (lambda (env) (myerror "Continue used outside of loop"))
-                      (lambda (v env) (myerror "Uncaught exception thrown"))))))))
+        (execute-main-class classname
+                            (outer-layer (parser file)
+                                         (newenvironment)
+                                         (lambda (v env) (myerror "Uncaught exception thrown")))
+                            return
+                            (lambda (env) (myerror "Break used outside of loop"))
+                            (lambda (env) (myerror "Continue used outside of loop"))
+                            (lambda (v env) (myerror "Uncaught exception thrown"))))))))
 
 (define first-statement car)
 (define remaining-statements cdr)
 
-; outer layer of interpreter
-; reads global variables/functions
+; outer layer
 (define outer-layer
+  (lambda (stmt-list environment throw)
+    (if (null? stmt-list)
+        environment
+        (outer-layer (remaining-statements stmt-list)
+                     (create-class-closure (first-statement stmt-list) environment throw)
+                     throw))))
+
+
+; class layer of interpreter
+; reads classes
+(define class-layer
   (lambda (statement-list environment throw)
     (cond
-      ((null? statement-list) environment)
+      ((eq? '() statement-list) environment)
       ((eq? 'var (statement-type (first-statement statement-list))) (outer-layer (remaining-statements statement-list) (interpret-declare (first-statement statement-list) environment throw) throw))
-      ((eq? 'function (statement-type (first-statement statement-list))) (outer-layer (remaining-statements statement-list) (insert-function (first-statement statement-list) environment throw) throw))
-      (else (myerror "Unsupported top level statement: " (statement-type statement))))))
+      ((or (eq? 'function (statement-type (first-statement statement-list)))
+           (eq? 'static-function (statement-type (first-statement statement-list))))
+       (class-layer (remaining-statements statement-list) (insert-function (first-statement statement-list) environment throw) throw))
+      (else (class-layer (remaining-statements statement-list)
+                         (create-class-closure (first-statement statement-list) environment)
+                         throw)))))
+;      (else (myerror "Unsupported top level statement: " (statement-type statement))))))
+
+
+(define execute-main-class
+  (lambda (classname environment return break continue throw)
+    (lookup-class classname environment return break continue throw)))
+
+(define get-closure-instances cdar)
+
+(define lookup-class
+  (lambda (classname environment return break continue throw)
+    (execute-main-function (get-closure-instances (lookup-closure classname environment))
+                           return break continue throw)))
+
+(define lookup-closure
+  (lambda (className environment)
+    (lookup-class-closure className (get-class-closure-names environment) (get-class-closure-vals environment))))
+
+;;;;;;;;;;;;;;;;;;
+(define class-closure-list
+  (lambda (environment)
+    (car environment)))
+
+(define get-class-closure-names
+  (lambda (environment)
+    (car (class-closure-list environment))))
+
+(define get-class-closure-vals
+  (lambda (environment)
+    (cdr (class-closure-list environment))))
+;;;;;;;;;;;;;;;;;
+
+
+;(define get-class-closure-names
+;  (lambda (environment)
+;    (caar environment)))
+
+;(define get-class-closure-vals
+;  (lambda (environment)
+;    (cdar environment)))
+
+(define lookup-class-closure
+  (lambda (classname vars vals)
+    (cond
+      ((null? vars) (myerror "Class does not exist: " classname))
+      ((eq? classname (car vars)) (car vals)) ;; wrong;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (else (lookup-class-closure classname (cdr vars) (cdr vals))))))
+
+
+    
 
 ; looks up and executes main
-(define execute-main
+(define execute-main-function
   (lambda (environment return break continue throw)
     (interpret-statement-list (get-function-body 'main environment throw)
                               (push-frame environment)
@@ -238,8 +303,10 @@
   (lambda (statement environment throw)
     (insert (cadr statement)
             (create-func-closure statement
-                                 (lambda (name closure call environment throw)
-                                   (generate-func-environment name closure call environment throw))) environment)))
+                                 (lambda
+                                     (name closure call environment throw)
+                                   (generate-func-environment name closure call environment throw)))
+            environment)))
 
 (define generate-func-environment
   (lambda (name closure expr environment throw)
@@ -268,6 +335,11 @@
 ; 1. function parameters
 ; 2. function body
 ; 3. scope for the function (the state the function is executed in)
+;(define create-func-closure
+;  (lambda (statement current-environment)
+;    (if (null? (cadr statement))
+;        (myerror "invalid function")
+
 (define create-func-closure
   (lambda (statement current-environment)
     (list (get-func-params statement)
@@ -279,19 +351,36 @@
 ; 2. the list of instance fields
 ; 3. the list of methods/function names and closures
 (define create-class-closure
-  (lambda (statement current-environment)
-    (list (get-parent-class statement)
-          (get-instance-fields statement)
-          current-environment)))
+  (lambda (stmt current-environment throw)
+    (insert (get-class-name stmt) ; var = class name
+            (cons (get-extends stmt) ; val = (parent (instances/fields/functions etc))
+                  (class-layer (get-class-body stmt) (newenvironment) throw))
+            current-environment)))        ; environment = same environment that was passed in
 
+;(define create-class-closure
+;  (lambda (statement current-environment)
+;    (list (get-parent-class statement)
+;          (get-instance-fields statement)
+;          current-environment)))
+
+(define add-class-closure
+  (lambda (statement environment)
+    (insert (get-class-name statement)
+            (create-class-closure statement environment)
+            environment)))
+
+(define get-class-name cadr) ; (class B (extends A) body) => B
 (define get-extends caddr) ; (class B (extends A) body) => (extends A)
-(define get-parent-class   ; (class B (extends A) body) => A
-  (lambda (stmt)
-    (cadr (get-extends stmt))))
-(define get-instance-fields
-  (lambda (stmt)
-    (if (list
-    (cadddr stmt)) ; (class B (extends A) body) => body
+(define get-parent-class-from-closure cdar) ; ((extends a) (instances/etc)) => a
+;(define get-parent-class   ; (class B (extends A) body) => a
+;  (lambda (stmt)
+;    (cadr (get-extends stmt))))
+(define get-class-body cadddr) ; (class B (extends A) body) => body
+
+;(define get-instance-fields
+;  (lambda (stmt)
+;    (if (list
+;         (cadddr stmt)) ; (class B (extends A) body) => body
 
 
 ; create instance closure
