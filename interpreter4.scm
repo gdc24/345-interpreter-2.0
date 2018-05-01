@@ -138,7 +138,8 @@
   (lambda (statement environment return break continue throw)
     (cond
       ((eq? 'return (statement-type statement)) (interpret-return statement environment return throw))
-      ((eq? 'var (statement-type statement)) (interpret-declare statement environment throw))
+      ((eq? 'new (statement-type statement)) (create-instance-closure statement environment throw))
+      ((eq? 'var (statement-type statement)) (interpret-declare statement environment return break continue throw))
       ((and (eq? '= (statement-type statement))
             (list? (caddr statement))
             (eq? 'funcall (caaddr statement)))
@@ -162,10 +163,13 @@
 
 ; Adds a new variable binding to the environment.  There may be an assignment with the variable
 (define interpret-declare
-  (lambda (statement environment throw)
-    (if (exists-declare-value? statement)
-        (insert (get-declare-var statement) (eval-expression (get-declare-value statement) environment throw) environment)
-        (insert (get-declare-var statement) 'novalue environment))))
+  (lambda (statement environment throw return break continue)
+    (cond
+      ((and (exists-declare-value? statement) (list? (get-declare-value statement)))
+       (create-instance-closure statement environment return break continue throw))
+      ((exists-declare-value? statement)
+        (insert (get-declare-var statement) (eval-expression (get-declare-value statement) environment throw) environment))
+      (else (insert (get-declare-var statement) 'novalue environment)))))
 
 ; Updates the environment to add an new binding for a variable
 (define interpret-assign
@@ -356,6 +360,31 @@
             (cons (get-extends stmt) ; val = (parent (instances/fields/functions etc))
                   (class-layer (get-class-body stmt) (newenvironment) throw))
             current-environment)))        ; environment = same environment that was passed in
+
+;;;;;;;;;;;;;;;;;;;;;
+;(define create-instance-closure
+;  (lambda (stmt current-environment throw)
+;    (find-class-closure (get-class-name stmt) environment throw)))
+(define find-class-closure
+  (lambda (name environment throw)
+    (lookup-class-closure name (get-class-closure-names environment) (get-class-closure-vals environment))));
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(define create-instance-closure
+  (lambda (statement environment return break continue throw)
+    (cond
+      ((null? statement) (myerror "Statement doesn't exist"))
+      ((null? (find-class-closure (cdaddr statement) environment throw)) (myerror "Class doesn't exist"))
+      (else (insert (car statement) (make-statelayer-from-instance-fields (get-closure-of-class (lookup (get-new-class-name statement) environment)) (newenvironment) return break continue throw) environment)))))
+
+(define make-statelayer-from-instance-fields
+  (lambda (class-closure environment return break continue throw)
+    (cond
+      ((null? class-closure) environment)
+      ((list? (car class-closure)) (make-statelayer-from-instance-fields (cdr class-closure) (interpret-statement (car class-closure) environment return break continue throw) return break continue throw)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 ;(define create-class-closure
 ;  (lambda (statement current-environment)
