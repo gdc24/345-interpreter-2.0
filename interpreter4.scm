@@ -256,10 +256,6 @@
 
 ; Interprets a function
 ; returns final state including input function
-;(define interpret-function
-;  (lambda (statement environment throw)
-;    (insert (get-func-name statement) (create-func-closure statement environment) environment)))
-
 (define interpret-function
   (lambda (funcall environment throw)
     (call/cc
@@ -329,10 +325,6 @@
 ; 1. function parameters
 ; 2. function body
 ; 3. scope for the function (the state the function is executed in)
-;(define create-func-closure
-;  (lambda (statement current-environment)
-;    (if (null? (cadr statement))
-;        (myerror "invalid function")
 
 (define create-func-closure
   (lambda (statement current-environment)
@@ -372,11 +364,6 @@
 
 
 
-;(define create-class-closure
-;  (lambda (statement current-environment)
-;    (list (get-parent-class statement)
-;          (get-instance-fields statement)
-;          current-environment)))
 
 (define add-class-closure
   (lambda (statement environment)
@@ -387,15 +374,7 @@
 (define get-class-name cadr) ; (class B (extends A) body) => B
 (define get-extends caddr) ; (class B (extends A) body) => (extends A)
 (define get-parent-class-from-closure cdar) ; ((extends a) (instances/etc)) => a
-;(define get-parent-class   ; (class B (extends A) body) => a
-;  (lambda (stmt)
-;    (cadr (get-extends stmt))))
 (define get-class-body cadddr) ; (class B (extends A) body) => body
-
-;(define get-instance-fields
-;  (lambda (stmt)
-;    (if (list
-;         (cadddr stmt)) ; (class B (extends A) body) => body
 
 
 ; create instance closure
