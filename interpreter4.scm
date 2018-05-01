@@ -370,12 +370,13 @@
     (lookup-class-closure name (get-class-closure-names environment) (get-class-closure-vals environment))));
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define get-true-type cdaddr)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define create-instance-closure
   (lambda (statement environment return break continue throw)
     (cond
       ((null? statement) (myerror "Statement doesn't exist"))
-      ((null? (find-class-closure (cdaddr statement) environment throw)) (myerror "Class doesn't exist"))
+      ((null? (find-class-closure (get-true-type statement) environment throw)) (myerror "Class doesn't exist"))
       (else (insert (car statement) (make-statelayer-from-instance-fields (get-closure-of-class (lookup (get-new-class-name statement) environment)) (newenvironment) return break continue throw) environment)))))
 
 (define make-statelayer-from-instance-fields
