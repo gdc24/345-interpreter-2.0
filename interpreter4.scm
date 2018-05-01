@@ -68,36 +68,26 @@
 
 (define lookup-closure
   (lambda (className environment)
-    (lookup-class-closure className (get-class-closure-names environment) (get-class-closure-vals environment))))
+    (lookup-class-closure className (class-closure-names environment) (class-closure-vals environment))))
 
-;;;;;;;;;;;;;;;;;;
 (define class-closure-list
   (lambda (environment)
-    (car environment)))
+    (first-statement environment)))
 
-(define get-class-closure-names
+(define class-closure-names
   (lambda (environment)
-    (car (class-closure-list environment))))
+    (first-statement (class-closure-list environment))))
 
-(define get-class-closure-vals
+(define class-closure-vals
   (lambda (environment)
-    (cdr (class-closure-list environment))))
-;;;;;;;;;;;;;;;;;
+    (remaining-statements (class-closure-list environment))))
 
-
-;(define get-class-closure-names
-;  (lambda (environment)
-;    (caar environment)))
-
-;(define get-class-closure-vals
-;  (lambda (environment)
-;    (cdar environment)))
 
 (define lookup-class-closure
   (lambda (classname vars vals)
     (cond
       ((null? vars) (myerror "Class does not exist: " classname))
-      ((eq? (string->symbol classname) (car vars)) (car vals)) ;; wrong;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ((eq? (string->symbol classname) (car vars)) (car vals))
       (else (lookup-class-closure classname (cdr vars) (cdr vals))))))
 
 
@@ -361,30 +351,25 @@
                   (class-layer (get-class-body stmt) (newenvironment) throw))
             current-environment)))        ; environment = same environment that was passed in
 
-;;;;;;;;;;;;;;;;;;;;;
-;(define create-instance-closure
-;  (lambda (stmt current-environment throw)
-;    (find-class-closure (get-class-name stmt) environment throw)))
+
 (define find-class-closure
   (lambda (name environment throw)
-    (lookup-class-closure name (get-class-closure-names environment) (get-class-closure-vals environment))));
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (lookup-class-closure name (class-closure-names environment) (class-closure-vals environment))));
 
 (define get-true-type cdaddr)
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define create-instance-closure
   (lambda (statement environment return break continue throw)
-    (cond
-      ((null? statement) (myerror "Statement doesn't exist"))
-      ((null? (find-class-closure (get-true-type statement) environment throw)) (myerror "Class doesn't exist"))
-      (else (insert (car statement) (make-statelayer-from-instance-fields (get-closure-of-class (lookup (get-new-class-name statement) environment)) (newenvironment) return break continue throw) environment)))))
+    (if (null? statement)
+        (myerror "Statement is null")
+        (insert (car statement) (make-layer (cadr (lookup (get-true-type statement) environment)) (newenvironment) return break continue throw) environment))))
 
-(define make-statelayer-from-instance-fields
+(define make-layer
   (lambda (class-closure environment return break continue throw)
-    (cond
-      ((null? class-closure) environment)
-      ((list? (car class-closure)) (make-statelayer-from-instance-fields (cdr class-closure) (interpret-statement (car class-closure) environment return break continue throw) return break continue throw)))))
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (if (null? class-closure)
+        environment
+        ((list? (first-statement class-closure)) (make-layer (cdr class-closure) (interpret-statement (car class-closure) environment return break continue throw) return break continue throw)))))
+
 
 
 ;(define create-class-closure
